@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import './CourseDetail.css';
 import Footer from '../../components/Footer';
+import { setSubmitting, getCourseByID } from '../api/courseApi';
 
 // Quiz Results Component
 function QuizResults({ submission, onClose }) {
@@ -48,14 +49,7 @@ function QuizModal({ quizSet, onClose, onComplete }) {
     setSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post('http://localhost:5000/api/quizzes/submit', {
-        quizId: quizSet.quizId,
-        quizSetId: quizSet.quizSetId,
-        answers
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
+      const response = await setSubmitting(token);
       setResult(response.data);
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to submit quiz');
@@ -178,9 +172,7 @@ export default function CourseDetail() {
     try {
       const token = localStorage.getItem('token');
       // Fetch course
-      const courseRes = await axios.get(`http://localhost:5000/api/courses/${courseId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const courseRes = await getCourseByID(token, courseId);
       setCourse(courseRes.data);
       
       // Fetch my enrollments
