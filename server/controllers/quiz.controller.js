@@ -1,6 +1,7 @@
 const Quiz = require('../models/quiz.model');
 const Submission = require('../models/submission.model');
 const Enrollment = require('../models/enrollment.model');
+const Course = require('../models/course.model');
 
 exports.submitQuiz = async (req, res) => {
     const { quizId, quizSetId, answers } = req.body;
@@ -16,6 +17,61 @@ exports.submitQuiz = async (req, res) => {
         if (!quizSet) return res.status(404).json({ message: 'Quiz set không tồn tại' });
         correctAnswers = quizSet.questions.map(q => q.answer);
         totalQuestions = quizSet.questions.length;
+        // Ensure only answers for this quiz set are counted
+        const trimmedAnswers = answers.slice(0, totalQuestions);
+        let scoreSet = 0;
+        for (let i = 0; i < trimmedAnswers.length; i++) {
+            if (trimmedAnswers[i] === correctAnswers[i]) scoreSet++;
+        }
+        // Save submission
+        const submissionSet = await Submission.create({
+            quizId,
+            quizSetId,
+            studentId: req.user.id,
+            answers: trimmedAnswers,
+            score: scoreSet
+        });
+        // Calculate progress based on completed quiz sets
+        const enrollmentSet = await Enrollment.findOne({ 
+            studentId: req.user.id, 
+            courseId: quiz.courseId 
+        });
+        if (enrollmentSet) {
+            const percent = (scoreSet / totalQuestions) * 100;
+            const passed = percent >= 60;
+            if (!enrollmentSet.attemptedQuizSets.includes(quizSetId)) {
+                enrollmentSet.attemptedQuizSets.push(quizSetId);
+            }
+            if (passed) {
+                if (!enrollmentSet.completedQuizSets.includes(quizSetId)) {
+                    enrollmentSet.completedQuizSets.push(quizSetId);
+                }
+            }
+            let activeQuizSetsCount;
+            if (quiz.quizSets && quiz.quizSets.length > 0) {
+                activeQuizSetsCount = quiz.quizSets.filter(set => set.isActive !== false).length;
+            } else {
+                activeQuizSetsCount = 1;
+            }
+            const attemptedProgressPercentage = activeQuizSetsCount > 0 
+                ? Math.round((enrollmentSet.attemptedQuizSets.length / activeQuizSetsCount) * 100)
+                : 0;
+            const passedProgressPercentage = activeQuizSetsCount > 0 
+                ? Math.round((enrollmentSet.completedQuizSets.length / activeQuizSetsCount) * 100)
+                : 0;
+            const allQuizSetsAttempted = enrollmentSet.attemptedQuizSets.length === activeQuizSetsCount;
+            const courseCompleted = allQuizSetsAttempted && enrollmentSet.instructorApproved;
+            enrollmentSet.progress = attemptedProgressPercentage;
+            enrollmentSet.completed = courseCompleted;
+            await enrollmentSet.save();
+        }
+        res.status(201).json({
+            message: '✅ Nộp bài thành công',
+            score: scoreSet,
+            passed: (scoreSet / totalQuestions) * 100 >= 60,
+            quizSetId
+        });
+        return;
     } else if (quiz.questions && quiz.questions.length > 0) {
         // Old format - use quiz ID as quizSetId
         if (quizSetId !== quiz._id.toString()) {
@@ -23,89 +79,52 @@ exports.submitQuiz = async (req, res) => {
         }
         correctAnswers = quiz.questions.map(q => q.answer);
         totalQuestions = quiz.questions.length;
+        const trimmedAnswers = answers.slice(0, totalQuestions);
+        let scoreOld = 0;
+        for (let i = 0; i < trimmedAnswers.length; i++) {
+            if (trimmedAnswers[i] === correctAnswers[i]) scoreOld++;
+        }
+        const submissionOld = await Submission.create({
+            quizId,
+            quizSetId,
+            studentId: req.user.id,
+            answers: trimmedAnswers,
+            score: scoreOld
+        });
+        const enrollmentOld = await Enrollment.findOne({ 
+            studentId: req.user.id, 
+            courseId: quiz.courseId 
+        });
+        if (enrollmentOld) {
+            const percent = (scoreOld / totalQuestions) * 100;
+            const passed = percent >= 60;
+            if (!enrollmentOld.attemptedQuizSets.includes(quizSetId)) {
+                enrollmentOld.attemptedQuizSets.push(quizSetId);
+            }
+            if (passed) {
+                if (!enrollmentOld.completedQuizSets.includes(quizSetId)) {
+                    enrollmentOld.completedQuizSets.push(quizSetId);
+                }
+            }
+            let activeQuizSetsCount = 1;
+            const attemptedProgressPercentage = Math.round((enrollmentOld.attemptedQuizSets.length / activeQuizSetsCount) * 100);
+            const passedProgressPercentage = Math.round((enrollmentOld.completedQuizSets.length / activeQuizSetsCount) * 100);
+            const allQuizSetsAttempted = enrollmentOld.attemptedQuizSets.length === activeQuizSetsCount;
+            const courseCompleted = allQuizSetsAttempted && enrollmentOld.instructorApproved;
+            enrollmentOld.progress = attemptedProgressPercentage;
+            enrollmentOld.completed = courseCompleted;
+            await enrollmentOld.save();
+        }
+        res.status(201).json({
+            message: '✅ Nộp bài thành công',
+            score: scoreOld,
+            passed: (scoreOld / totalQuestions) * 100 >= 60,
+            quizSetId
+        });
+        return;
     } else {
         return res.status(404).json({ message: 'Quiz không có câu hỏi' });
     }
-
-    // ❌ Không cho nộp nhiều lần cho cùng một quiz set
-    const existing = await Submission.findOne({ 
-        quizId, 
-        quizSetId, 
-        studentId: req.user.id 
-    });
-    if (existing) {
-        return res.status(400).json({ message: 'Bạn đã nộp bài cho quiz set này rồi' });
-    }
-
-    let score = 0;
-    for (let i = 0; i < answers.length; i++) {
-        if (answers[i] === correctAnswers[i]) score++;
-    }
-
-    const submission = await Submission.create({
-        quizId,
-        quizSetId,
-        studentId: req.user.id,
-        answers,
-        score
-    });
-
-    // Calculate progress based on completed quiz sets
-    const enrollment = await Enrollment.findOne({ 
-        studentId: req.user.id, 
-        courseId: quiz.courseId 
-    });
-
-    if (enrollment) {
-        const percent = (score / totalQuestions) * 100;
-        const passed = percent >= 60;
-
-        // Always add to attempted quiz sets if not already there
-        if (!enrollment.attemptedQuizSets.includes(quizSetId)) {
-            enrollment.attemptedQuizSets.push(quizSetId);
-        }
-
-        if (passed) {
-            // Add to completed quiz sets if not already there
-            if (!enrollment.completedQuizSets.includes(quizSetId)) {
-                enrollment.completedQuizSets.push(quizSetId);
-            }
-        }
-
-        // Calculate progress percentage based on active quiz sets
-        let activeQuizSetsCount;
-        if (quiz.quizSets && quiz.quizSets.length > 0) {
-            activeQuizSetsCount = quiz.quizSets.filter(set => set.isActive !== false).length;
-        } else {
-            // Old format - count as 1 quiz set
-            activeQuizSetsCount = 1;
-        }
-
-        // Progress based on attempted quizzes (shows completion of all quizzes)
-        const attemptedProgressPercentage = activeQuizSetsCount > 0 
-            ? Math.round((enrollment.attemptedQuizSets.length / activeQuizSetsCount) * 100)
-            : 0;
-
-        // Passed progress based on passed quizzes (shows quality of performance)
-        const passedProgressPercentage = activeQuizSetsCount > 0 
-            ? Math.round((enrollment.completedQuizSets.length / activeQuizSetsCount) * 100)
-            : 0;
-
-        // Course is completed when all active quiz sets are attempted AND instructor approves
-        const allQuizSetsAttempted = enrollment.attemptedQuizSets.length === activeQuizSetsCount;
-        const courseCompleted = allQuizSetsAttempted && enrollment.instructorApproved;
-
-        enrollment.progress = attemptedProgressPercentage; // Use attempted progress for main progress
-        enrollment.completed = courseCompleted;
-        await enrollment.save();
-    }
-
-    res.status(201).json({
-        message: '✅ Nộp bài thành công',
-        score,
-        passed: (score / totalQuestions) * 100 >= 60,
-        quizSetId
-    });
 };
 
 // Instructor tạo quiz
@@ -432,6 +451,13 @@ exports.approveCourseCompletion = async (req, res) => {
         enrollment.graduatedAt = new Date();
         await enrollment.save();
 
+        // Automatically issue certificate when course is approved
+        const Certificate = require('../models/certificate.model');
+        const existingCertificate = await Certificate.findOne({ studentId, courseId });
+        if (!existingCertificate) {
+            await Certificate.create({ studentId, courseId });
+        }
+
         res.json({ 
             message: 'Phê duyệt hoàn thành khóa học thành công',
             enrollment 
@@ -518,4 +544,19 @@ exports.getStudentQuizProgress = async (req, res) => {
         res.status(500).json({ message: 'Server error: ' + err.message });
     }
 };
+
+// Lấy tất cả quiz của instructor hiện tại
+exports.getQuizzesByInstructor = async (req, res) => {
+  try {
+    // Tìm tất cả khoá học mà instructor này dạy
+    const courses = await Course.find({ instructorId: req.user.id });
+    const courseIds = courses.map(course => course._id);
+    // Tìm tất cả quiz thuộc các khoá học đó
+    const quizzes = await Quiz.find({ courseId: { $in: courseIds } });
+    res.json(quizzes);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch quizzes for instructor' });
+  }
+};
+
 

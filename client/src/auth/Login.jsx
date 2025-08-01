@@ -124,7 +124,7 @@ export default function Login() {
 
         {success && (
           <div className="success-message">
-            <span> {success}</span>
+            <span>✅ {success}</span>
           </div>
         )}
 
@@ -189,7 +189,7 @@ export default function Login() {
           
           <div className="test-accounts">
             <details>
-              <summary> Tài khoản test</summary>
+              <summary>📋 Tài khoản test</summary>
               <div className="test-accounts-list">
                 <div><strong>Student:</strong> alice@student.kolp.vn / password123</div>
                 <div><strong>Instructor:</strong> bob@instructor.kolp.vn / password123</div>

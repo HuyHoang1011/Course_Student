@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = 'http://localhost:5000/api';
 
 // Login user
 export const loginUser = async (credentials) => {
@@ -29,6 +29,17 @@ export const changePassword = async (passwordData) => {
 export const getCurrentUser = async () => {
   const token = localStorage.getItem('token');
   const response = await axios.get(`${API_BASE_URL}/auth/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+  return response.data;
+};
+
+// Update user profile
+export const updateUserProfile = async (profileData) => {
+  const token = localStorage.getItem('token');
+  const response = await axios.put(`${API_BASE_URL}/auth/profile`, profileData, {
     headers: {
       Authorization: `Bearer ${token}`
     }

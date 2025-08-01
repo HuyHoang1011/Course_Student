@@ -6,6 +6,17 @@ const bcrypt = require('bcryptjs');
 exports.login = async (req, res) => {
   const { email, password } = req.body;
 
+
+  // const user = {_id: '123', role: 'admin'};
+
+  // const token = JsonWebTokenError.sign({userId: user._id, role: user.role}, process.env.JWT_SECRET, {expiresIn: '10m'});
+
+  // res.json({
+  //   role: user.role,
+  // })
+
+
+
   try {
     const user = await findUserByEmail(email);
     if (!user) return res.status(400).json({ message: 'Email không tồn tại' });
@@ -73,7 +84,38 @@ exports.getMe = async (req, res) => {
         id: user._id, 
         name: user.name, 
         email: user.email, 
-        role: user.role 
+        role: user.role,
+        createdAt: user.createdAt
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Lỗi server: ' + err.message });
+  }
+};
+
+// Update user profile
+exports.updateProfile = async (req, res) => {
+  const { name } = req.body;
+
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'Người dùng không tồn tại' });
+
+    // Update name if provided
+    if (name && name.trim()) {
+      user.name = name.trim();
+    }
+
+    await user.save();
+
+    res.json({
+      message: 'Cập nhật thông tin thành công',
+      user: { 
+        id: user._id, 
+        name: user.name, 
+        email: user.email, 
+        role: user.role,
+        createdAt: user.createdAt
       }
     });
   } catch (err) {

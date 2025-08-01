@@ -75,6 +75,13 @@
   padding: 8px 12px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.user-info:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
 }
 
 .user-avatar {

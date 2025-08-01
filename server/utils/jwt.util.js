@@ -5,3 +5,8 @@ function signToken(payload) {
 }
 
 module.exports = { signToken };
+
+
+
+
+// jwt.sign({id,name,role}, JWT_SECRET, {expiresIn: '10m'}   )
