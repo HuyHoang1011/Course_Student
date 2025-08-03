@@ -3,7 +3,8 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import './CourseDetail.css';
 import Footer from '../../components/Footer';
-import { setSubmitting, getCourseByID } from '../api/courseApi';
+import { setMySubmitting, getCourseByID, getQuizzesByCourseId } from '../api/courseApi';
+import { createEnrollment, getEnrollmentByCourseId } from '../api/enrollmentApi';
 
 // Quiz Results Component
 function QuizResults({ submission, onClose }) {
@@ -49,8 +50,8 @@ function QuizModal({ quizSet, onClose, onComplete }) {
     setSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await setSubmitting(token);
-      setResult(response.data);
+      const response = await setMySubmitting(token);
+      setResult(response);
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to submit quiz');
     } finally {
@@ -171,15 +172,17 @@ export default function CourseDetail() {
     setError('');
     try {
       const token = localStorage.getItem('token');
+      console.log('Token:', token);
       // Fetch course
       const courseRes = await getCourseByID(token, courseId);
-      setCourse(courseRes.data);
+      setCourse(courseRes);
+      console.log('Course response:', courseRes);
       
       // Fetch my enrollments
-      const enrollRes = await axios.get('http://localhost:5000/api/enrollments/my-courses', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const found = enrollRes.data.find(e => e.courseId?._id === courseId);
+      const enrollRes = await getEnrollmentByCourseId(token, courseId);
+      console.log('Enrollment response:', enrollRes);
+      const found = enrollRes.find(e => e.courseId?._id === courseId);
+      console.log('Found enrollment:', found);
       setEnrollment(found || null);
 
       // If student is accepted, fetch quizzes
@@ -187,6 +190,7 @@ export default function CourseDetail() {
         fetchQuizzes();
       }
     } catch (err) {
+      console.error('Fetch error:', err);
       setError(err.response?.data?.message || 'Failed to load course.');
     } finally {
       setLoading(false);
@@ -202,11 +206,9 @@ export default function CourseDetail() {
     try {
       const token = localStorage.getItem('token');
       console.log('Fetching quizzes for course:', courseId);
-      const response = await axios.get(`http://localhost:5000/api/quizzes/course/${courseId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      console.log('Quiz data received:', response.data);
-      setQuizData(response.data);
+      const response = await getQuizzesByCourseId(token, courseId);
+      console.log('Quiz data received:', response);
+      setQuizData(response);
     } catch (err) {
       console.error('Failed to fetch quizzes:', err);
       console.error('Error details:', err.response?.data);
@@ -245,9 +247,7 @@ export default function CourseDetail() {
     setError('');
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:5000/api/enrollments', { courseId }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await createEnrollment(token, courseId);
       // Refetch enrollment status
       const enrollRes = await axios.get('http://localhost:5000/api/enrollments/my-courses', {
         headers: { Authorization: `Bearer ${token}` }
@@ -310,7 +310,9 @@ export default function CourseDetail() {
 
   const isAccepted = enrollment && enrollment.status === 'approved';
   const isPending = enrollment && enrollment.status === 'pending';
-
+  console.log('loading:', loading);
+  console.log('error:', error);
+  console.log('course:', course);
   return (
     <div className="course-detail-page">
       {loading ? (
