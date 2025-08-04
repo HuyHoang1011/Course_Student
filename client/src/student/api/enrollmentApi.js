@@ -12,6 +12,9 @@ export const getMyEnrollments = async (token) => {
   return response.data;
 };
 
+
+
+
 // Cancel enrollment
 export const cancelEnrollment = async (enrollmentId) => {
   const token = localStorage.getItem('token');
@@ -53,3 +56,9 @@ export async function createEnrollment(token, courseId) {
   return res.data;
 }
 
+export async function enrollInCourse(token, courseId) {
+  const res = await axios.post('http://localhost:5000/api/enrollments', { courseId }, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+}

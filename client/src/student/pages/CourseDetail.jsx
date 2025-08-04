@@ -4,7 +4,7 @@ import axios from 'axios';
 import './CourseDetail.css';
 import Footer from '../../components/Footer';
 import { setMySubmitting, getCourseByID, getQuizzesByCourseId } from '../api/courseApi';
-import { createEnrollment, getEnrollmentByCourseId } from '../api/enrollmentApi';
+import { createEnrollment, getEnrollmentByCourseId, getMyEnrollments, cancelEnrollment } from '../api/enrollmentApi';
 
 // Quiz Results Component
 function QuizResults({ submission, onClose }) {
@@ -249,10 +249,8 @@ export default function CourseDetail() {
       const token = localStorage.getItem('token');
       await createEnrollment(token, courseId);
       // Refetch enrollment status
-      const enrollRes = await axios.get('http://localhost:5000/api/enrollments/my-courses', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const found = enrollRes.data.find(e => e.courseId?._id === courseId);
+      const enrollRes = await getMyEnrollments(token);
+      const found = enrollRes.find(e => e.courseId?._id === courseId);
       setEnrollment(found || null);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to register.');
@@ -266,9 +264,7 @@ export default function CourseDetail() {
     setError('');
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:5000/api/enrollments/${enrollment._id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await cancelEnrollment(enrollment._id);
       setEnrollment(null);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to cancel registration.');

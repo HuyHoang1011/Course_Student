@@ -9,18 +9,21 @@ import UserManagement from './admin/pages/UserManagement';
 import CourseManagement from './admin/pages/CourseManagement';
 import CertificateManagement from './admin/pages/CertificateManagement';
 import QuizResultsAnalytics from './admin/pages/QuizResultsAnalytics';
+
 import InstructorCourses from './instructor/pages/InstructorCourses';
 import CourseStudents from './instructor/pages/CourseStudents';
 import CourseContentManagement from './instructor/pages/CourseContentManagement';
 import CreateCourse from './instructor/pages/CreateCourse';
-import StudentManagement from './instructor/pages/StudentManagement';
 import QuizManagement from './instructor/pages/QuizManagement';
+import StudentManagement from './instructor/pages/StudentManagement';
+import InstructorAnalytics from './instructor/pages/Analytics';
+
+
 import StudentDashboard from './student/pages/StudentDashboard';
 import StudentCourse from './student/pages/StudentCourse';
 import CourseDetail from './student/pages/CourseDetail';
 import CertificatePage from './student/pages/CertificatePage';
 import CertificateDetail from './student/pages/CertificateDetail';
-import InstructorAnalytics from './instructor/pages/Analytics';
 
 function AppContent() {
   const location = useLocation();

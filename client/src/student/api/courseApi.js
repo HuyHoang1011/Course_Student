@@ -12,7 +12,6 @@ export async function fetchActiveCourses(token) {
   return res.data;
 }
 
-
 export async function setMySubmitting(token) {
   const res = await axios.post('http://localhost:5000/api/quizzes/submit', {
     quizId: quizSet.quizId,
@@ -33,8 +32,6 @@ export async function getCourseByID(token, courseId) {
   return res.data;
 }
 
-
-
 export async function getQuizzesByCourseId(token, courseId) {
   const res = await axios.get(`http://localhost:5000/api/quizzes/course/${courseId}`,
     {
@@ -43,3 +40,6 @@ export async function getQuizzesByCourseId(token, courseId) {
   );
   return res.data;
 }
+
+
+

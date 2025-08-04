@@ -7,3 +7,12 @@ export const getMyCertificates = async () => {
   });
   return res.data;
 }; 
+
+export const getCertificateById = async (token,certificateId) => {
+  const res = await axios.get(`http://localhost:5000/api/certificates/${certificateId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};
+
+

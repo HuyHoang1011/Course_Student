@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Footer from '../../components/Footer';
 import './CertificateDetail.css';
+import { getCertificateById } from '../api/certificateApi';
 
 export default function CertificateDetail() {
   const { certificateId } = useParams();
@@ -17,10 +18,8 @@ export default function CertificateDetail() {
       setError('');
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get(`http://localhost:5000/api/certificates/${certificateId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setCertificate(res.data);
+        const res = await getCertificateById(token, certificateId);
+        setCertificate(res);
       } catch (err) {
         setError(err.response?.data?.message || 'Failed to load certificate.');
       } finally {
