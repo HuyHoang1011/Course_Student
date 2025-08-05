@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import InstructorSidebar from '../components/InstructorSidebar';
@@ -15,40 +15,67 @@ export default function CreateCourse() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // Debug authentication state
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+    console.log('Authentication debug:', {
+      token: token ? 'Token exists' : 'No token',
+      user: user ? JSON.parse(user) : 'No user data'
+    });
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    console.log('Form field changed:', name, value);
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        [name]: value
+      };
+      console.log('Updated form data:', newData);
+      return newData;
+    });
     // Clear error when user starts typing
     if (error) setError('');
   };
 
   const validateForm = () => {
+    console.log('Validating form with data:', formData);
+    
     if (!formData.title.trim()) {
+      console.log('Title validation failed');
       setError('Course title is required');
       return false;
     }
     if (!formData.description.trim()) {
+      console.log('Description validation failed');
       setError('Course description is required');
       return false;
     }
     if (formData.title.trim().length < 3) {
+      console.log('Title length validation failed');
       setError('Course title must be at least 3 characters long');
       return false;
     }
     if (formData.description.trim().length < 10) {
+      console.log('Description length validation failed');
       setError('Course description must be at least 10 characters long');
       return false;
     }
+    console.log('Form validation passed');
     return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
+    console.log('Form submitted with data:', formData);
+    
+    if (!validateForm()) {
+      console.log('Form validation failed');
+      return;
+    }
 
     setLoading(true);
     setError('');
@@ -56,14 +83,21 @@ export default function CreateCourse() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post('http://localhost:5000/api/courses', {
+      console.log('Token:', token ? 'Token exists' : 'No token found');
+      
+      const requestData = {
         title: formData.title.trim(),
         description: formData.description.trim(),
         imageIntroduction: formData.imageIntroduction.trim() || undefined
-      }, {
+      };
+      
+      console.log('Sending request with data:', requestData);
+      
+      const response = await axios.post('http://localhost:5000/api/courses', requestData, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
+      console.log('Response received:', response.data);
       setSuccess('Course created successfully! Redirecting to course management...');
       
       // Redirect to the new course's content management page after 2 seconds
@@ -73,6 +107,8 @@ export default function CreateCourse() {
 
     } catch (err) {
       console.error('Create course error:', err);
+      console.error('Error response:', err.response);
+      console.error('Error message:', err.message);
       setError(err.response?.data?.message || 'Failed to create course. Please try again.');
     } finally {
       setLoading(false);
@@ -114,7 +150,13 @@ export default function CreateCourse() {
           )}
 
           <div className="create-course-form-container">
-            <form className="create-course-form" onSubmit={handleSubmit}>
+            <form 
+              className="create-course-form" 
+              onSubmit={(e) => {
+                console.log('Form onSubmit triggered');
+                handleSubmit(e);
+              }}
+            >
               <div className="form-section">
                 <h3>Course Information</h3>
                 
@@ -205,9 +247,26 @@ export default function CreateCourse() {
                   Cancel
                 </button>
                 <button
-                  type="submit"
+                  type="button"
+                  className="test-btn"
+                  onClick={() => {
+                    console.log('Test button clicked');
+                    alert('Test button works!');
+                    console.log('Form data:', formData);
+                    console.log('Loading state:', loading);
+                  }}
+                  style={{ background: 'green', color: 'white', padding: '10px', margin: '5px' }}
+                >
+                  Test Button
+                </button>
+                <button
+                  type="button"
                   className="create-btn"
                   disabled={loading}
+                  onClick={() => {
+                    console.log('Create Course button clicked');
+                    handleSubmit({ preventDefault: () => {} });
+                  }}
                 >
                   {loading ? (
                     <>

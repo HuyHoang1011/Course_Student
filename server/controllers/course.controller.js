@@ -23,17 +23,26 @@ exports.getCourseById = async (req, res) => {
 
 // POST
 exports.createCourse = async (req, res) => {
+  console.log('Create course request received:', req.body);
+  console.log('User from token:', req.user);
+  
   const { title, description, content, imageIntroduction } = req.body;
 
-  const newCourse = await Course.create({
-    title,
-    description,
-    content,
-    imageIntroduction,
-    instructorId: req.user.id
-  });
+  try {
+    const newCourse = await Course.create({
+      title,
+      description,
+      content,
+      imageIntroduction,
+      instructorId: req.user.id
+    });
 
-  res.status(201).json(newCourse);
+    console.log('Course created successfully:', newCourse);
+    res.status(201).json(newCourse);
+  } catch (error) {
+    console.error('Error creating course:', error);
+    res.status(500).json({ message: 'Error creating course: ' + error.message });
+  }
 };
 
 // PUT
