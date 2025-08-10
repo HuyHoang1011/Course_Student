@@ -158,6 +158,7 @@ export default function CourseManagement() {
                 <tr>
                   <th>Title</th>
                   <th>Instructor</th>
+                  <th>Price</th>
                   <th>Status</th>
                   <th>Created At</th>
                   <th>Actions</th>
@@ -168,6 +169,13 @@ export default function CourseManagement() {
                   <tr key={course._id}>
                     <td>{course.title}</td>
                     <td>{course.instructorId?.name || 'N/A'}</td>
+                    <td>
+                      {course.price === 0 ? (
+                        <span className="price-free">Free</span>
+                      ) : (
+                        <span className="price-paid">${course.price}</span>
+                      )}
+                    </td>
                     <td>{getStatusBadge(course.status)}</td>
                     <td>{new Date(course.createdAt).toLocaleString()}</td>
                     <td>
@@ -282,33 +290,57 @@ export default function CourseManagement() {
                 </div>
 
                 <div className="course-content">
-                  <h3>Course Content ({selectedCourse.content?.length || 0} items)</h3>
-                  {selectedCourse.content && selectedCourse.content.length > 0 ? (
-                    <div className="content-list">
-                      {selectedCourse.content.map((item, index) => (
-                        <div key={index} className="content-item">
-                          <div className="content-type">
-                            {item.type === 'video' && '🎥'}
-                            {item.type === 'pdf' && '📄'}
-                            {item.type === 'slide' && '📊'}
-                            {item.type === 'image' && '🖼️'}
-                            <span className="content-type-text">{item.type.toUpperCase()}</span>
+                  <h3>Course Sections ({selectedCourse.sections?.length || 0} sections)</h3>
+                  {selectedCourse.sections && selectedCourse.sections.length > 0 ? (
+                    <div className="sections-list">
+                      {selectedCourse.sections.map((section, sectionIndex) => (
+                        <div key={sectionIndex} className="section-item">
+                          <div className="section-header">
+                            <h4>Section {section.order}: {section.title}</h4>
+                            {section.description && (
+                              <p className="section-description">{section.description}</p>
+                            )}
                           </div>
-                          <div className="content-url">
-                            <a 
-                              href={item.url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="content-link"
-                            >
-                              {item.url}
-                            </a>
-                          </div>
+                          
+                          {section.lessons && section.lessons.length > 0 ? (
+                            <div className="lessons-list">
+                              <h5>Lessons ({section.lessons.length})</h5>
+                              {section.lessons.map((lesson, lessonIndex) => (
+                                <div key={lessonIndex} className="lesson-item">
+                                  <div className="lesson-type">
+                                    {lesson.type === 'video' && '🎥'}
+                                    {lesson.type === 'pdf' && '📄'}
+                                    {lesson.type === 'slide' && '📊'}
+                                    {lesson.type === 'text' && '📝'}
+                                    <span className="lesson-type-text">{lesson.type.toUpperCase()}</span>
+                                  </div>
+                                  <div className="lesson-info">
+                                    <span className="lesson-title">Lesson {lesson.order}: {lesson.title}</span>
+                                    {lesson.duration > 0 && (
+                                      <span className="lesson-duration">⏱️ {lesson.duration} min</span>
+                                    )}
+                                  </div>
+                                  <div className="lesson-url">
+                                    <a 
+                                      href={lesson.url} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="content-link"
+                                    >
+                                      {lesson.url}
+                                    </a>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="no-lessons">No lessons in this section.</p>
+                          )}
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="no-content">No content available for this course.</p>
+                    <p className="no-content">No sections available for this course.</p>
                   )}
                 </div>
 

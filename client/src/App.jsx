@@ -4,6 +4,8 @@ import { AuthProvider } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Login from './auth/Login';
 import Register from './auth/Register';
+
+
 import AdminDashboard from './admin/pages/AdminDashboard';
 import UserManagement from './admin/pages/UserManagement';
 import CourseManagement from './admin/pages/CourseManagement';

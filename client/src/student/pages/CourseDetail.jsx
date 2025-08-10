@@ -322,6 +322,14 @@ export default function CourseDetail() {
           <div className="course-detail-instructor">
             <b>Instructor:</b> {course.instructorId?.name || 'Unknown'}
           </div>
+          
+          <div className="course-detail-price">
+            {course.price === 0 ? (
+              <span className="price-free">Free Course</span>
+            ) : (
+              <span className="price-paid">${course.price}</span>
+            )}
+          </div>
 
           {/* Show different content based on enrollment status */}
           {!enrollment ? (
@@ -405,11 +413,52 @@ export default function CourseDetail() {
               {/* Full Course Content */}
               <div className="full-content-section">
                 <h2>Course Content</h2>
-                {course.content && course.content.length > 0 ? (
-                  <div className="course-detail-media-list">
-                    {course.content.map((item, idx) => (
-                      <div key={idx} className="course-detail-media">
-                        {renderContentItem(item, idx)}
+                {course.sections && course.sections.length > 0 ? (
+                  <div className="course-sections-list">
+                    {course.sections.map((section, sectionIdx) => (
+                      <div key={sectionIdx} className="course-section">
+                        <div className="section-header">
+                          <h3>Section {section.order}: {section.title}</h3>
+                          {section.description && (
+                            <p className="section-description">{section.description}</p>
+                          )}
+                        </div>
+                        
+                        {section.lessons && section.lessons.length > 0 ? (
+                          <div className="lessons-list">
+                            {section.lessons.map((lesson, lessonIdx) => (
+                              <div key={lessonIdx} className="lesson-item">
+                                <div className="lesson-header">
+                                  <h4>Lesson {lesson.order}: {lesson.title}</h4>
+                                  <div className="lesson-meta">
+                                    <span className="lesson-type">
+                                      {lesson.type === 'video' && '🎥'}
+                                      {lesson.type === 'pdf' && '📄'}
+                                      {lesson.type === 'slide' && '📊'}
+                                      {lesson.type === 'text' && '📝'}
+                                      {lesson.type}
+                                    </span>
+                                    {lesson.duration > 0 && (
+                                      <span className="lesson-duration">⏱️ {lesson.duration} min</span>
+                                    )}
+                                  </div>
+                                </div>
+                                
+                                {lesson.description && (
+                                  <p className="lesson-description">{lesson.description}</p>
+                                )}
+                                
+                                <div className="lesson-content">
+                                  {renderContentItem(lesson, lessonIdx)}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="no-lessons">
+                            <p>No lessons available in this section.</p>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

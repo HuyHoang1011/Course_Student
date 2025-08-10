@@ -40,6 +40,14 @@ export default function InstructorCourseCard({
         {course.description || 'No description available'}
       </p>
       
+      <div className="course-price">
+        {course.price === 0 ? (
+          <span className="price-free">Free</span>
+        ) : (
+          <span className="price-paid">${course.price}</span>
+        )}
+      </div>
+      
       <div className="course-meta">
         <div className="meta-item">
           <span className="meta-label">Created:</span>
@@ -48,9 +56,9 @@ export default function InstructorCourseCard({
           </span>
         </div>
         <div className="meta-item">
-          <span className="meta-label">Content:</span>
+          <span className="meta-label">Sections:</span>
           <span className="meta-value">
-            {course.content?.length || 0} items
+            {course.sections?.length || 0} sections
           </span>
         </div>
         <div className="meta-item">

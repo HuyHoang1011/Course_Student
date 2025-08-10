@@ -26,13 +26,14 @@ exports.createCourse = async (req, res) => {
   console.log('Create course request received:', req.body);
   console.log('User from token:', req.user);
   
-  const { title, description, content, imageIntroduction } = req.body;
+  const { title, description, price, sections, imageIntroduction } = req.body;
 
   try {
     const newCourse = await Course.create({
       title,
       description,
-      content,
+      price: price || 0,
+      sections: sections || [],
       imageIntroduction,
       instructorId: req.user.id
     });

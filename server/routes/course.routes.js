@@ -118,6 +118,11 @@ router.get('/:id', getCourseById);
  *                 type: string
  *               description:
  *                 type: string
+ *               price:
+ *                 type: number
+ *                 minimum: 0
+ *                 default: 0
+ *                 description: Course price (0 for free courses)
  *               introductionContent:
  *                 type: array
  *                 items:
@@ -132,20 +137,35 @@ router.get('/:id', getCourseById);
  *                       type: string
  *                     description:
  *                       type: string
- *               content:
+ *               sections:
  *                 type: array
  *                 items:
  *                   type: object
  *                   properties:
- *                     type:
- *                       type: string
- *                       enum: [video, pdf, slide, text]
- *                     url:
- *                       type: string
  *                     title:
  *                       type: string
  *                     description:
  *                       type: string
+ *                     order:
+ *                       type: number
+ *                     lessons:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           title:
+ *                             type: string
+ *                           description:
+ *                             type: string
+ *                           type:
+ *                             type: string
+ *                             enum: [video, pdf, slide, text]
+ *                           url:
+ *                             type: string
+ *                           duration:
+ *                             type: number
+ *                           order:
+ *                             type: number
  *               imageIntroduction:
  *                 type: string
  *     responses:
@@ -190,7 +210,7 @@ router.post('/', verifyToken, authorizeRole('admin', 'instructor'), createCourse
  *                 type: string
  *               introductionContent:
  *                 type: array
- *               content:
+ *               sections:
  *                 type: array
  *               imageIntroduction:
  *                 type: string

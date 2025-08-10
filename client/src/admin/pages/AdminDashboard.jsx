@@ -244,17 +244,6 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
-
-        {/* Quick Actions */}
-        <div className="quick-actions">
-          <h3>Quick Actions</h3>
-          <div className="action-buttons">
-            <a href="/admin/users" className="action-btn">Manage Users</a>
-            <a href="/admin/courses" className="action-btn">Manage Courses</a>
-            <a href="/admin/certificates" className="action-btn">View Certificates</a>
-            <a href="/admin/analytics" className="action-btn">Analytics</a>
-          </div>
-        </div>
       </main>
     </div>
   );

@@ -4,9 +4,10 @@ const API_BASE_URL = 'http://localhost:5000/api';
 
 // Get student's enrolled courses
 export const getMyEnrollments = async (token) => {
+  const authToken = token || localStorage.getItem('token');
   const response = await axios.get(`${API_BASE_URL}/enrollments/my-courses`, {
     headers: {
-      Authorization: `Bearer ${token}`
+      Authorization: `Bearer ${authToken}`
     }
   });
   return response.data;
@@ -41,24 +42,29 @@ export const enrollCourse = async (courseId) => {
 }; 
 
 export async function getEnrollmentByCourseId(token, courseId) {
+  const authToken = token || localStorage.getItem('token');
   const res = await axios.get(`http://localhost:5000/api/enrollments/my-courses`,
     {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${authToken}` }
     }
   );
-  return res.data;
+  // Filter the results to find enrollment for the specific course
+  const enrollments = res.data;
+  return enrollments.filter(enrollment => enrollment.courseId?._id === courseId);
 }
 
 export async function createEnrollment(token, courseId) {
+  const authToken = token || localStorage.getItem('token');
   const res = await axios.post(`http://localhost:5000/api/enrollments`, { courseId }, {
-    headers: { Authorization: `Bearer ${token}` }
+    headers: { Authorization: `Bearer ${authToken}` }
   });
   return res.data;
 }
 
 export async function enrollInCourse(token, courseId) {
+  const authToken = token || localStorage.getItem('token');
   const res = await axios.post('http://localhost:5000/api/enrollments', { courseId }, {
-    headers: { Authorization: `Bearer ${token}` }
+    headers: { Authorization: `Bearer ${authToken}` }
   });
   return res.data;
 }

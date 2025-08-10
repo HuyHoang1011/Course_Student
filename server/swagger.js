@@ -98,23 +98,46 @@ const options = {
                 }
               }
             },
-            content: {
+            sections: {
               type: 'array',
               items: {
                 type: 'object',
                 properties: {
-                  type: {
-                    type: 'string',
-                    enum: ['video', 'pdf', 'slide', 'text']
-                  },
-                  url: {
-                    type: 'string'
-                  },
                   title: {
                     type: 'string'
                   },
                   description: {
                     type: 'string'
+                  },
+                  order: {
+                    type: 'number'
+                  },
+                  lessons: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        title: {
+                          type: 'string'
+                        },
+                        description: {
+                          type: 'string'
+                        },
+                        type: {
+                          type: 'string',
+                          enum: ['video', 'pdf', 'slide', 'text']
+                        },
+                        url: {
+                          type: 'string'
+                        },
+                        duration: {
+                          type: 'number'
+                        },
+                        order: {
+                          type: 'number'
+                        }
+                      }
+                    }
                   }
                 }
               }
