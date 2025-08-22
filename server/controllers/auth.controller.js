@@ -1,6 +1,7 @@
 const { findUserByEmail, verifyPassword } = require('../services/auth.service');
 const { signToken } = require('../utils/jwt.util');
 const User = require('../models/user.model');
+const NotificationService = require('../services/notification.service');
 const bcrypt = require('bcryptjs');
 
 exports.login = async (req, res) => {
@@ -43,6 +44,13 @@ exports.register = async (req, res) => {
   
       const hashed = await bcrypt.hash(password, 10);
       const newUser = await User.create({ name, email, password: hashed, role });
+
+      // Tạo thông báo chào mừng
+      try {
+        await NotificationService.notifyWelcome(newUser._id, role);
+      } catch (error) {
+        console.error('Error creating welcome notification:', error);
+      }
   
       res.status(201).json({
         message: 'Đăng ký thành công',

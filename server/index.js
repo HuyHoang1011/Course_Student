@@ -12,6 +12,7 @@ const quizRoutes = require('./routes/quiz.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
 const certRoutes = require('./routes/certificate.routes');
 const paymentRoutes = require('./routes/payment.routes');
+const notificationRoutes = require('./routes/notification.routes');
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -37,6 +38,8 @@ app.use('/api/certificates', certRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
 app.use('/api/payments', paymentRoutes);
+
+app.use('/api/notifications', notificationRoutes);
 
 app.use('/api/users', userRoutes);
 const PORT = process.env.PORT || 5000;

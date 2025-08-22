@@ -42,9 +42,27 @@ export default function StudentDashboard() {
       setError('');
       try {
         const token = localStorage.getItem('token');
+        
+        // Test direct API call to debug
+        console.log('Testing direct API call to /api/courses/active...');
+        const testResponse = await fetch('http://localhost:5000/api/courses/active', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        const testData = await testResponse.json();
+        console.log('Direct API response:', testData);
+        console.log('Direct API first course:', testData[0]);
+        console.log('Direct API first course studentCount:', testData[0]?.studentCount);
+        
         const data = await fetchActiveCourses(token);
+        console.log('StudentDashboard received courses data:', data);
+        console.log('First course structure:', data[0]);
+        console.log('First course studentCount:', data[0]?.studentCount);
         setCourses(data);
       } catch (err) {
+        console.error('Error loading courses:', err);
         setError(err.response?.data?.message || 'Failed to load courses.');
       } finally {
         setLoading(false);
@@ -65,11 +83,7 @@ export default function StudentDashboard() {
     page * COURSES_PER_PAGE
   );
 
-  // Group courses into rows of 4
-  const rows = [];
-  for (let i = 0; i < paginatedCourses.length; i += 4) {
-    rows.push(paginatedCourses.slice(i, i + 4));
-  }
+
 
   return (
     <div className="student-dashboard">
@@ -93,20 +107,12 @@ export default function StudentDashboard() {
       ) : (
         <>
           <div className="student-courses-grid">
-            {rows.map((row, idx) => (
-              <div className="student-courses-row" key={idx}>
-                {row.map(course => (
-                  <CourseCard
-                    key={course._id}
-                    course={course}
-                    onClick={() => navigate(`/student/courses/${course._id}`)}
-                  />
-                ))}
-                {/* Fill empty columns if needed for layout */}
-                {Array.from({ length: 5 - row.length }).map((_, i) => (
-                  <div className="student-course-card empty" key={`empty-${i}`}></div>
-                ))}
-              </div>
+            {paginatedCourses.map(course => (
+              <CourseCard
+                key={course._id}
+                course={course}
+                onClick={() => navigate(`/student/courses/${course._id}`)}
+              />
             ))}
           </div>
           {/* Pagination controls */}

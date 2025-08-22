@@ -1,35 +1,107 @@
+const mongoose = require('mongoose');
 const Enrollment = require('../models/enrollment.model');
+const Course = require('../models/course.model');
+const NotificationService = require('../services/notification.service');
 
-// Sinh viên đăng ký khóa học
-exports.enrollCourse = async (req, res) => {
-  const { courseId } = req.body;
-
-  const exists = await Enrollment.findOne({
-    studentId: req.user.id,
-    courseId
-  });
-
-  if (exists) return res.status(400).json({ message: 'Đã đăng ký khóa học này' });
-
-  const enrollment = await Enrollment.create({
-    studentId: req.user.id,
-    courseId,
-    status: 'pending'
-  });
-
-  res.status(201).json(enrollment);
+// Approve (admin duyệt) — chỉ +1 nếu trước đó chưa approved
+exports.adminApproveEnrollment = async (req, res, next) => {
+  const session = await mongoose.startSession();
+  try {
+    await session.withTransaction(async () => {
+      const { id } = req.params; // enrollmentId
+      const enrollment = await Enrollment.findOneAndUpdate(
+        { _id: id, status: { $ne: 'approved' } }, // guard idempotent
+        { $set: { status: 'approved', approvedAt: new Date() } },
+        { new: true, session }
+      );
+      if (!enrollment) {
+        return res.status(400).json({ message: 'Already approved or not found' });
+      }
+      await Course.updateOne(
+        { _id: enrollment.courseId },
+        { $inc: { 'stats.studentCount': 1 } },
+        { session }
+      );
+      res.json({ ok: true, enrollment });
+    });
+  } catch (e) {
+    next(e);
+  } finally {
+    session.endSession();
+  }
 };
 
-// Duyệt đăng ký khóa học (instructor/admin)
-exports.approveEnrollment = async (req, res) => {
-  const { enrollmentId } = req.params;
-  const enrollment = await Enrollment.findByIdAndUpdate(
-    enrollmentId,
-    { status: 'approved' },
-    { new: true }
-  );
-  if (!enrollment) return res.status(404).json({ message: 'Không tìm thấy đăng ký' });
-  res.json(enrollment);
+// Enroll (student tự đăng ký) — free thì auto approve và +1
+exports.enrollCourse = async (req, res, next) => {
+  const session = await mongoose.startSession();
+  try {
+    await session.withTransaction(async () => {
+      const { courseId } = req.body;
+      const studentId = req.user.id;
+
+      // tránh trùng
+      const exists = await Enrollment.findOne({ courseId, studentId }).session(session);
+      if (exists) return res.status(409).json({ message: 'Already enrolled' });
+
+      const course = await Course.findById(courseId).session(session);
+      if (!course) return res.status(404).json({ message: 'Course not found' });
+
+      const isFree = course.priceType === 'free' || Number(course.price) === 0;
+
+      const enrollment = await Enrollment.create([{
+        studentId,
+        courseId,
+        status: isFree ? 'approved' : 'pending',
+        approvedAt: isFree ? new Date() : undefined,
+      }], { session }).then(r => r[0]);
+
+      if (isFree) {
+        await Course.updateOne(
+          { _id: courseId },
+          { $inc: { 'stats.studentCount': 1 } },
+          { session }
+        );
+      }
+      res.status(201).json(enrollment);
+    });
+  } catch (e) {
+    next(e);
+  } finally {
+    session.endSession();
+  }
+};
+
+// Cancel enrollment — nếu đang approved thì -1
+exports.cancelEnrollment = async (req, res, next) => {
+  const session = await mongoose.startSession();
+  try {
+    await session.withTransaction(async () => {
+      const { courseId } = req.params;
+      const studentId = req.user.id;
+
+      const enrollment = await Enrollment.findOne({ courseId, studentId }).session(session);
+      if (!enrollment) return res.status(404).json({ message: 'Enrollment not found' });
+
+      const wasApproved = enrollment.status === 'approved';
+
+      enrollment.status = 'cancelled';
+      enrollment.cancelledAt = new Date();
+      await enrollment.save({ session });
+
+      if (wasApproved) {
+        await Course.updateOne(
+          { _id: courseId },
+          { $inc: { 'stats.studentCount': -1 } },
+          { session }
+        );
+      }
+      res.json({ ok: true });
+    });
+  } catch (e) {
+    next(e);
+  } finally {
+    session.endSession();
+  }
 };
 
 // Lấy danh sách khóa học sinh viên đã đăng ký
@@ -49,8 +121,6 @@ exports.getStudentsByCourse = async (req, res) => {
 // Instructor xem tất cả sinh viên đăng ký khóa học của mình
 exports.getInstructorStudents = async (req, res) => {
   try {
-    const Course = require('../models/course.model');
-    
     // Get all courses by this instructor
     const instructorCourses = await Course.find({ instructorId: req.user.id });
     const courseIds = instructorCourses.map(course => course._id);
@@ -66,24 +136,66 @@ exports.getInstructorStudents = async (req, res) => {
   }
 };
 
-// Hủy đăng ký khóa học (student)
-exports.cancelEnrollment = async (req, res) => {
-  const { enrollmentId } = req.params;
-  const enrollment = await Enrollment.findById(enrollmentId);
-  if (!enrollment) return res.status(404).json({ message: 'Không tìm thấy đăng ký' });
-  if (enrollment.studentId.toString() !== req.user.id) {
-    return res.status(403).json({ message: 'Bạn không có quyền hủy đăng ký này' });
+// Instructor/Admin duyệt đăng ký khóa học
+exports.approveEnrollment = async (req, res, next) => {
+  const session = await mongoose.startSession();
+  try {
+    await session.withTransaction(async () => {
+      const { enrollmentId } = req.params;
+      const enrollment = await Enrollment.findById(enrollmentId).session(session);
+      if (!enrollment) return res.status(404).json({ message: 'Enrollment not found' });
+      
+      if (enrollment.status === 'approved') {
+        return res.status(400).json({ message: 'Enrollment already approved' });
+      }
+      
+      enrollment.status = 'approved';
+      enrollment.approvedAt = new Date();
+      await enrollment.save({ session });
+      
+      // Increment student count
+      await Course.updateOne(
+        { _id: enrollment.courseId },
+        { $inc: { 'stats.studentCount': 1 } },
+        { session }
+      );
+      
+      res.json({ message: 'Enrollment approved successfully', enrollment });
+    });
+  } catch (e) {
+    next(e);
+  } finally {
+    session.endSession();
   }
-  await Enrollment.findByIdAndDelete(enrollmentId);
-  res.json({ message: 'Đã hủy đăng ký khóa học' });
 };
 
 // Instructor/Admin từ chối đăng ký khóa học
-exports.rejectEnrollment = async (req, res) => {
-  const { enrollmentId } = req.params;
-  const enrollment = await Enrollment.findById(enrollmentId);
-  if (!enrollment) return res.status(404).json({ message: 'Không tìm thấy đăng ký' });
-  
-  await Enrollment.findByIdAndDelete(enrollmentId);
-  res.json({ message: 'Đã từ chối đăng ký khóa học' });
+exports.rejectEnrollment = async (req, res, next) => {
+  const session = await mongoose.startSession();
+  try {
+    await session.withTransaction(async () => {
+      const { enrollmentId } = req.params;
+      const enrollment = await Enrollment.findById(enrollmentId).session(session);
+      if (!enrollment) return res.status(404).json({ message: 'Enrollment not found' });
+      
+      const wasApproved = enrollment.status === 'approved';
+      
+      await Enrollment.findByIdAndDelete(enrollmentId, { session });
+      
+      // Nếu đang approved thì -1 studentCount
+      if (wasApproved) {
+        await Course.updateOne(
+          { _id: enrollment.courseId },
+          { $inc: { 'stats.studentCount': -1 } },
+          { session }
+        );
+      }
+      
+      res.json({ message: 'Enrollment rejected successfully' });
+    });
+  } catch (e) {
+    next(e);
+  } finally {
+    session.endSession();
+  }
 };

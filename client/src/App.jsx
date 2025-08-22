@@ -46,7 +46,7 @@ function AppContent() {
         <Route path="/admin/analytics" element={<QuizResultsAnalytics />} />
         {/* Instructor routes */}
         <Route path="/instructor/courses" element={<InstructorCourses />} />
-        <Route path="/instructor/courses/create" element={<CreateCourse />} />
+        <Route path="/instructor/create-course" element={<CreateCourse />} />
         <Route path="/instructor/courses/:courseId/students" element={<CourseStudents />} />
         <Route path="/instructor/courses/:courseId/content" element={<CourseContentManagement />} />
         <Route path="/instructor/courses/:courseId/quiz" element={<QuizManagement />} />

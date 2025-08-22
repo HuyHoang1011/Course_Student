@@ -42,7 +42,8 @@ const PaymentModal = ({ isOpen, onClose, course, onPaymentSuccess }) => {
       const result = await paymentApi.createPayment(
         course._id,
         paymentMethod,
-        course.price
+        course.salePrice || course.price,
+        course
       );
 
       // Payment successful
@@ -84,8 +85,18 @@ const PaymentModal = ({ isOpen, onClose, course, onPaymentSuccess }) => {
         <div className="payment-modal-body">
           <div className="course-summary">
             <h3>{course.title}</h3>
+            {course.subtitle && <p className="course-subtitle">{course.subtitle}</p>}
             <p className="course-price">
-              {course.price === 0 ? 'Free' : `$${course.price}`}
+              {course.priceType === 'free' || course.price === 0 ? 'Free' : (
+                <>
+                  {course.salePrice && course.salePrice < course.price && (
+                    <span className="original-price">${course.price}</span>
+                  )}
+                  <span className="final-price">
+                    {course.currency || 'AUD'}${course.salePrice || course.price}
+                  </span>
+                </>
+              )}
             </p>
           </div>
 
@@ -166,7 +177,7 @@ const PaymentModal = ({ isOpen, onClose, course, onPaymentSuccess }) => {
                 className="pay-button"
                 disabled={isProcessing}
               >
-                {isProcessing ? 'Processing...' : `Pay $${course.price}`}
+                {isProcessing ? 'Processing...' : `Pay ${course.currency || 'AUD'}${course.salePrice || course.price}`}
               </button>
             </div>
           </form>

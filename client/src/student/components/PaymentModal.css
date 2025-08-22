@@ -83,10 +83,32 @@
   font-size: 1.1rem;
 }
 
+.course-subtitle {
+  margin: 0 0 12px 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
 .course-price {
   margin: 0;
   font-size: 1.5rem;
   font-weight: 700;
+  color: #059669;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.original-price {
+  font-size: 1rem;
+  color: #9ca3af;
+  text-decoration: line-through;
+  font-weight: 400;
+}
+
+.final-price {
   color: #059669;
 }
 
